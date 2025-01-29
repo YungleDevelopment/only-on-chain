@@ -4,18 +4,18 @@ const nextConfig = {
   distDir: "out",
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Modify the client-side entry point
-      const originalEntry = config.entry
-      config.entry = async () => {
-        const entries = await originalEntry()
-        if (entries["main.js"] && !entries["main.js"].includes("./app/widgets/page.tsx")) {
-          entries["main.js"].push("./app/widgets/page.tsx")
-        }
-        return entries
-      }
+      // Add a new entry point for widgets
+      config.entry = {
+        ...config.entry,
+        widgets: {
+          import: "./app/widgets-entry.ts",
+          filename: "widgets.js",
+        },
+      };
     }
-    return config
+    return config;
   },
+  // Ensure all necessary files are treated as static assets
   async headers() {
     return [
       {

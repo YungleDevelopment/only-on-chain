@@ -1,11 +1,5 @@
 "use client"
 
-declare global {
-  interface Window {
-    WidgetsPage: typeof WidgetsPage;
-  }
-}
-
 import dynamic from "next/dynamic"
 import { WalletProvider } from "@/contexts/WalletContext"
 
@@ -25,10 +19,5 @@ export default function WidgetsPage() {
       </div>
     </WalletProvider>
   )
-}
-
-// Make it available for direct import
-if (typeof window !== "undefined") {
-  ;(window as Window & typeof globalThis).WidgetsPage = WidgetsPage
 }
 

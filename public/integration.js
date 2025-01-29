@@ -46,11 +46,12 @@
     loadScriptWithRetry(
       "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
     ),
-    loadScriptWithRetry("https://only-on-chain.vercel.app/widgets"),
+    loadScriptWithRetry("https://only-on-chain.vercel.app/widgets.js"),
   ])
     .then(() => {
-      // Access the global WidgetsPage component
-      const WidgetsPage = window.WidgetsPage;
+      const React = window.React;
+      const ReactDOM = window.ReactDOM;
+      const { WidgetsPage } = window;
 
       if (!WidgetsPage) {
         console.error("WidgetsPage component not found");
