@@ -4,13 +4,17 @@ const nextConfig = {
   distDir: "out",
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Add a new entry point for widgets
-      config.entry = {
-        ...config.entry,
-        widgets: {
-          import: "./app/widgets-entry.ts",
-          filename: "widgets.js",
-        },
+      // Modify the entry configuration safely
+      const originalEntry = config.entry;
+      config.entry = async () => {
+        const entries =
+          typeof originalEntry === "function"
+            ? await originalEntry()
+            : originalEntry;
+        return {
+          ...entries,
+          widgets: "./app/widgets-entry.tsx",
+        };
       };
     }
     return config;
