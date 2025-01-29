@@ -14,7 +14,7 @@
   // Cargar el script de Next.js
   var script = document.createElement("script");
   script.src =
-    "https://tu-app-next.vercel.app/_next/static/chunks/pages/widgets.js";
+    "https://only-on-chain.vercel.app/_next/static/chunks/pages/widgets.js";
   script.onload = () => {
     // Inicializar la aplicación Next.js
     var ReactDOM = window.ReactDOM;
@@ -32,7 +32,7 @@
   var link = document.createElement("link");
   link.rel = "stylesheet";
   link.href =
-    "https://tu-app-next.vercel.app/_next/static/css/pages/widgets.css";
+    "https://only-on-chain.vercel.app/_next/static/css/pages/widgets.css";
   document.head.appendChild(link);
 
   // Crear un contenedor raíz para los widgets de Next.js
