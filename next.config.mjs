@@ -2,24 +2,11 @@
 const nextConfig = {
   output: "export",
   distDir: "out",
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Modify the entry configuration safely
-      const originalEntry = config.entry;
-      config.entry = async () => {
-        const entries =
-          typeof originalEntry === "function"
-            ? await originalEntry()
-            : originalEntry;
-        return {
-          ...entries,
-          widgets: "./app/widgets-entry.tsx",
-        };
-      };
-    }
-    return config;
+  // Allow our components to be loaded from external domains
+  experimental: {
+    optimizeCss: true,
+    craCompat: true,
   },
-  // Ensure all necessary files are treated as static assets
   async headers() {
     return [
       {

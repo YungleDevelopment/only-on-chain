@@ -1,23 +1,21 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { WalletProvider } from "@/contexts/WalletContext"
+import { WalletConnector, UploadWidget } from "@/components/Widgets"
 
-const WalletConnector = dynamic(() => import("@/components/Widgets").then((mod) => mod.WalletConnector), {
-  ssr: false,
-})
-const UploadWidget = dynamic(() => import("@/components/Widgets").then((mod) => mod.UploadWidget), { ssr: false })
+// Export the components individually for direct usage
+export { WalletConnector, UploadWidget }
 
+// The page component is still needed for direct access to /widgets
 export default function WidgetsPage() {
   return (
-    <WalletProvider>
+    <div className="flex flex-col gap-4 p-4">
       <div id="wallet-connector-container">
         <WalletConnector />
       </div>
       <div id="upload-widget-container">
         <UploadWidget />
       </div>
-    </WalletProvider>
+    </div>
   )
 }
 

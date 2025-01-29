@@ -1,19 +1,48 @@
 (() => {
-  // Function to create a container for a widget
-  function createWidgetContainer(id) {
-    var container = document.createElement("div");
-    container.id = id;
-    document.body.appendChild(container);
-    return container;
+  // Function to load CSS
+  function loadStyles() {
+    const links = [
+      "https://only-on-chain.vercel.app/styles/globals.css",
+      // Add any other required stylesheets
+    ];
+
+    links.forEach((href) => {
+      if (!document.querySelector(`link[href="${href}"]`)) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = href;
+        document.head.appendChild(link);
+      }
+    });
   }
 
-  // Create containers for our widgets
-  const container = createWidgetContainer("next-widgets-root");
+  // Function to create widget containers
+  function createWidgetContainers() {
+    // Create wallet container
+    const walletContainer = document.createElement("div");
+    walletContainer.id = "wallet-connector-container";
+    walletContainer.style.position = "fixed";
+    walletContainer.style.top = "20px";
+    walletContainer.style.right = "20px";
+    walletContainer.style.zIndex = "9999";
+    document.body.appendChild(walletContainer);
+
+    // Create upload container
+    const uploadContainer = document.createElement("div");
+    uploadContainer.id = "upload-widget-container";
+    uploadContainer.style.position = "fixed";
+    uploadContainer.style.bottom = "20px";
+    uploadContainer.style.right = "20px";
+    uploadContainer.style.zIndex = "9999";
+    document.body.appendChild(uploadContainer);
+
+    return { walletContainer, uploadContainer };
+  }
 
   // Load script with retry
   function loadScriptWithRetry(src, retries = 3) {
     return new Promise((resolve, reject) => {
-      var script = document.createElement("script");
+      const script = document.createElement("script");
       script.src = src;
       script.async = true;
       script.crossOrigin = "anonymous";
@@ -32,35 +61,48 @@
     });
   }
 
-  // Load styles first
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = "https://only-on-chain.vercel.app/styles/globals.css";
-  document.head.appendChild(link);
+  // Initialize widgets
+  async function initializeWidgets() {
+    try {
+      // Load styles first
+      loadStyles();
 
-  // Load necessary scripts and initialize the widgets
-  Promise.all([
-    loadScriptWithRetry(
-      "https://unpkg.com/react@18/umd/react.production.min.js"
-    ),
-    loadScriptWithRetry(
-      "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-    ),
-    loadScriptWithRetry("https://only-on-chain.vercel.app/widgets.js"),
-  ])
-    .then(() => {
+      // Create containers
+      const { walletContainer, uploadContainer } = createWidgetContainers();
+
+      // Load required scripts
+      await Promise.all([
+        loadScriptWithRetry(
+          "https://unpkg.com/react@18/umd/react.production.min.js"
+        ),
+        loadScriptWithRetry(
+          "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+        ),
+      ]);
+
+      // Load our components
+      const { WalletConnector, UploadWidget } = await import(
+        "https://only-on-chain.vercel.app/widgets"
+      );
+
+      // Initialize React components
       const React = window.React;
       const ReactDOM = window.ReactDOM;
-      const { WidgetsPage } = window;
 
-      if (!WidgetsPage) {
-        console.error("WidgetsPage component not found");
-        return;
-      }
+      // Render Wallet Connector
+      ReactDOM.createRoot(walletContainer).render(
+        React.createElement(WalletConnector)
+      );
 
-      // Render the widget
-      const root = ReactDOM.createRoot(container);
-      root.render(React.createElement(WidgetsPage));
-    })
-    .catch((error) => console.error("Error loading scripts:", error));
+      // Render Upload Widget
+      ReactDOM.createRoot(uploadContainer).render(
+        React.createElement(UploadWidget)
+      );
+    } catch (error) {
+      console.error("Error initializing widgets:", error);
+    }
+  }
+
+  // Start initialization
+  initializeWidgets();
 })();
