@@ -7,36 +7,33 @@
     return container;
   }
 
-  // Crear contenedores para nuestros widgets
-  var walletContainer = createWidgetContainer("next-wallet-widget-container");
-  var uploadContainer = createWidgetContainer("next-upload-widget-container");
+  // Función para cargar un widget
+  function loadWidget(widgetName, containerId) {
+    var container = document.getElementById(containerId);
+    if (!container) {
+      container = createWidgetContainer(containerId);
+    }
 
-  // Cargar el script de Next.js
-  var script = document.createElement("script");
-  script.src =
-    "https://only-on-chain.vercel.app/_next/static/chunks/pages/widgets.js";
-  script.onload = () => {
-    // Inicializar la aplicación Next.js
-    var ReactDOM = window.ReactDOM;
-    var React = window.React;
-    var Widgets = window.Widgets.default;
+    fetch("https://only-on-chain.vercel.app/api/widgets?widget=" + widgetName)
+      .then((response) => response.json())
+      .then((data) => {
+        container.innerHTML = data.content;
+        // Ejecutar los scripts dentro del widget
+        var scripts = container.getElementsByTagName("script");
+        for (var i = 0; i < scripts.length; i++) {
+          eval(scripts[i].innerText);
+        }
+      })
+      .catch((error) => console.error("Error loading widget:", error));
+  }
 
-    ReactDOM.render(
-      React.createElement(Widgets),
-      document.getElementById("next-widgets-root")
-    );
-  };
-  document.body.appendChild(script);
+  // Cargar los widgets
+  loadWidget("wallet", "next-wallet-widget-container");
+  loadWidget("upload", "next-upload-widget-container");
 
   // Cargar los estilos de Next.js
   var link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href =
-    "https://only-on-chain.vercel.app/_next/static/css/pages/widgets.css";
+  link.href = "https://only-on-chain.vercel.app/styles/widgets.css";
   document.head.appendChild(link);
-
-  // Crear un contenedor raíz para los widgets de Next.js
-  var root = document.createElement("div");
-  root.id = "next-widgets-root";
-  document.body.appendChild(root);
 })();
