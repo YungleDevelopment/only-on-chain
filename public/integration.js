@@ -46,28 +46,20 @@
     loadScriptWithRetry(
       "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
     ),
+    loadScriptWithRetry("https://only-on-chain.vercel.app/widgets.js"),
   ])
     .then(() => {
-      // Create a simple React component wrapper
-      const WidgetWrapper = () => {
-        const [Component, setComponent] = React.useState(null);
+      // Access the global WidgetsPage component
+      const WidgetsPage = window.WidgetsPage;
 
-        React.useEffect(() => {
-          // Dynamically import the widget component
-          import("https://only-on-chain.vercel.app/widgets")
-            .then((module) => {
-              setComponent(() => module.default);
-            })
-            .catch(console.error);
-        }, []);
-
-        if (!Component) return null;
-        return React.createElement(Component);
-      };
+      if (!WidgetsPage) {
+        console.error("WidgetsPage component not found");
+        return;
+      }
 
       // Render the widget
       const root = ReactDOM.createRoot(container);
-      root.render(React.createElement(WidgetWrapper));
+      root.render(React.createElement(WidgetsPage));
     })
     .catch((error) => console.error("Error loading scripts:", error));
 })();
