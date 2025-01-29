@@ -1,5 +1,5 @@
 ;(() => {
-  // Función para crear un contenedor para un widget
+  // Function to create a container for a widget
   function createWidgetContainer(id) {
     var container = document.createElement("div")
     container.id = id
@@ -7,40 +7,52 @@
     return container
   }
 
-  // Crear contenedores para nuestros widgets
-  createWidgetContainer("next-wallet-widget-container")
-  createWidgetContainer("next-upload-widget-container")
+  // Create containers for our widgets
+  createWidgetContainer("next-widgets-root")
 
-  // Cargar React y ReactDOM
-  function loadScript(src) {
+  // Load script with retry
+  function loadScriptWithRetry(src, retries = 3) {
     return new Promise((resolve, reject) => {
       var script = document.createElement("script")
       script.src = src
+      script.async = true
+      script.crossOrigin = "anonymous" // Add CORS support
       script.onload = resolve
-      script.onerror = reject
+      script.onerror = (error) => {
+        if (retries > 0) {
+          console.log(`Retrying to load ${src}. ${retries} attempts left.`)
+          loadScriptWithRetry(src, retries - 1)
+            .then(resolve)
+            .catch(reject)
+        } else {
+          reject(error)
+        }
+      }
       document.head.appendChild(script)
     })
   }
 
+  // Load necessary scripts and initialize the widgets
   Promise.all([
-    loadScript("https://unpkg.com/react@18/umd/react.production.min.js"),
-    loadScript("https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"),
-    loadScript("https://only-on-chain.vercel.app/widgets"),
+    loadScriptWithRetry("https://unpkg.com/react@18/umd/react.production.min.js"),
+    loadScriptWithRetry("https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"),
   ])
     .then(() => {
-      // Inicializar la aplicación Next.js
-      var container = document.createElement("div")
-      container.id = "next-widgets-root"
-      document.body.appendChild(container)
-
+      // Load the widgets
+      return loadScriptWithRetry("https://only-on-chain.vercel.app/widgets")
+    })
+    .then(() => {
+      // Initialize the Next.js app
+      var container = document.getElementById("next-widgets-root")
+      var ReactDOM = window.ReactDOM
+      var React = window.React
       var WidgetsPage = window.__NEXT_DATA__.props.pageProps.Component
-      // ReactDOM was undeclared.  Assuming it's available after loading the script.
-      const root = ReactDOM.createRoot(container)
-      root.render(React.createElement(WidgetsPage))
+      var root = ReactDOM.createRoot(container)
+      root.hydrate(React.createElement(WidgetsPage))
     })
     .catch((error) => console.error("Error loading scripts:", error))
 
-  // Cargar los estilos de Next.js
+  // Load Next.js styles
   var link = document.createElement("link")
   link.rel = "stylesheet"
   link.href = "https://only-on-chain.vercel.app/styles/globals.css"
