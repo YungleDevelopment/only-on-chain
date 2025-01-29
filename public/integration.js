@@ -1,10 +1,7 @@
 (() => {
   // Function to load CSS
   function loadStyles() {
-    const links = [
-      "https://only-on-chain.vercel.app/styles/globals.css",
-      // Add any other required stylesheets
-    ];
+    const links = ["https://only-on-chain.vercel.app/standalone/styles.css"];
 
     links.forEach((href) => {
       if (!document.querySelector(`link[href="${href}"]`)) {
@@ -78,12 +75,13 @@
         loadScriptWithRetry(
           "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
         ),
+        loadScriptWithRetry(
+          "https://only-on-chain.vercel.app/standalone/page.js"
+        ),
       ]);
 
-      // Load our components
-      const { WalletConnector, UploadWidget } = await import(
-        "https://only-on-chain.vercel.app/widgets"
-      );
+      // Get our components and provider
+      const { Widgets } = window;
 
       // Initialize React components
       const React = window.React;
@@ -91,12 +89,20 @@
 
       // Render Wallet Connector
       ReactDOM.createRoot(walletContainer).render(
-        React.createElement(WalletConnector)
+        React.createElement(
+          Widgets.Provider,
+          null,
+          React.createElement(Widgets.WalletConnector)
+        )
       );
 
       // Render Upload Widget
       ReactDOM.createRoot(uploadContainer).render(
-        React.createElement(UploadWidget)
+        React.createElement(
+          Widgets.Provider,
+          null,
+          React.createElement(Widgets.UploadWidget)
+        )
       );
     } catch (error) {
       console.error("Error initializing widgets:", error);
