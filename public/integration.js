@@ -46,7 +46,7 @@
     loadScriptWithRetry(
       "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
     ),
-    loadScriptWithRetry("https://only-on-chain.vercel.app/widgets.js"),
+    loadScriptWithRetry("https://only-on-chain.vercel.app/widgets"),
   ])
     .then(() => {
       // Access the global WidgetsPage component
