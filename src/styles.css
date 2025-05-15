@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-tw: #2b80ff;
+  --color-light: #c3d5f7;
+}
+
+@layer base {
+  :root {
+    --tw-important: !important;
+  }
+}

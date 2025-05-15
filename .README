@@ -1,0 +1,103 @@
+# only-on-chain
+
+## Description
+
+This project, "only-on-chain", is a web application that enables users to inscribe files and text directly onto the Cardano blockchain. Built with React and TypeScript, it features a modern, responsive interface powered by Framer Motion animations and Tailwind CSS styling. The application provides a seamless experience for connecting Cardano wallets and managing blockchain transactions.
+
+## Features
+
+- File Inscription:
+  - Support for various file types (PDF, PNG, MP4, etc.)
+  - Real-time transaction preparation and status tracking
+  - Batch file processing capabilities
+- Wallet Integration:
+  - Comprehensive Cardano wallet support
+  - Secure wallet connection management
+  - Transaction signing and submission
+  - UTxO management and balance checking
+- Modern UI/UX:
+  - Responsive design with Tailwind CSS
+  - Smooth animations using Framer Motion
+  - Real-time progress indicators
+  - Error handling and user feedback
+- TypeScript Integration:
+  - Type-safe development
+  - Enhanced code reliability
+  - Better developer experience
+
+## Technical Stack
+
+- **Frontend Framework**: React ^19.0.0
+- **Type System**: TypeScript ^5.7.3
+- **Styling**: 
+  - Tailwind CSS ^4.0.2
+  - PostCSS ^8.5.1
+  - Autoprefixer ^10.4.20
+- **Animation**: Framer Motion ^12.0.6
+- **Build Tools**:
+  - Webpack ^5.97.1
+  - Babel ^7.26.7
+- **Development Server**: Webpack Dev Server ^5.2.0
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/only-on-chain.git
+   cd only-on-chain
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Build the CSS using Tailwind:
+   ```bash
+   npm run build:css
+   ```
+
+## Development
+
+1. Start the development server:
+   ```bash
+   npm start
+   ```
+
+2. Open your browser and navigate to `http://localhost:3001`
+
+3. For CSS development, run the watch command in a separate terminal:
+   ```bash
+   npm run watch:css
+   ```
+
+## Scripts
+
+- `npm start`: Launches the development server on port 3001
+- `npm run build`: Creates a production build and copies bundle files
+- `npm run build:css`: Compiles Tailwind CSS
+- `npm run watch:css`: Watches for CSS changes and rebuilds automatically
+
+## Project Structure
+
+```
+only-on-chain/
+├── src/
+│   ├── components/     # React components
+│   ├── context/       # React context providers
+│   ├── scripts/       # Utility scripts
+│   ├── types/         # TypeScript type definitions
+│   └── styles.css     # Global styles
+├── dist/             # Production build output
+└── webpack.config.js # Webpack configuration
+```
+
+## Author
+
+Erick Hernández Silva (erick@yungle.com.mx)
+
+## License
+
+
+
+

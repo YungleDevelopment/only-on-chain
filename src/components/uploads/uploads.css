@@ -1,0 +1,373 @@
+.uploads-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  color: white;
+  background-color: #0a0a1a;
+  min-height: 100vh;
+}
+
+.uploads-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.uploads-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.uploads-header h1 {
+  font-size: 32px;
+  margin: 0;
+  color: white;
+}
+
+.uploads-filters {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.search-bar {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.search-bar form {
+  display: flex;
+  width: 100%;
+}
+
+.search-input {
+  flex-grow: 1;
+  padding: 10px 15px;
+  border-radius: 5px 0 0 5px;
+  background-color: #1a1a2a;
+  color: white;
+  border: 1px solid #333;
+  border-right: none;
+}
+
+.search-button {
+  padding: 10px 15px;
+  border-radius: 0 5px 5px 0;
+  background-color: #2a2a3a;
+  color: white;
+  border: 1px solid #333;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.search-button:hover {
+  background-color: #3a3a5a;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 5px;
+}
+
+.view-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a1a2a;
+  border: 1px solid #333;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.view-button:hover {
+  background-color: #2a2a3a;
+}
+
+.view-button.active {
+  background-color: #3a3a5a;
+  border-color: #5a5a7a;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-group label {
+  font-size: 14px;
+  color: #aaa;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border-radius: 5px;
+  background-color: #1a1a2a;
+  color: white;
+  border: 1px solid #333;
+  min-width: 120px;
+}
+
+.uploads-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 992px) {
+  .uploads-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .uploads-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .uploads-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .uploads-filters {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .view-toggle {
+    align-self: flex-end;
+    margin-top: 10px;
+  }
+}
+
+.upload-card {
+  background: linear-gradient(to bottom, rgba(30, 30, 60, 0.7), rgba(20, 20, 40, 0.7));
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.upload-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.date-of-upload {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.upload-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.upload-description {
+  font-size: 14px;
+  color: #ddd;
+  margin-bottom: 15px;
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.thumbnail-container {
+  width: 100%;
+  height: 150px;
+  background-color: #1a1a2a;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.upload-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder-thumbnail {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a1a2a;
+}
+
+.image-icon {
+  font-size: 32px;
+  color: #555;
+}
+
+.copy-text {
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 14px;
+}
+
+.copy-text:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+  gap: 10px;
+}
+
+.pagination-button {
+  background-color: #1a1a2a;
+  border: 1px solid #333;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #2a2a3a;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.page-number {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a1a2a;
+  border: 1px solid #333;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.page-number.active {
+  background-color: #3a3a5a;
+  border-color: #5a5a7a;
+}
+
+.ellipsis {
+  color: #aaa;
+}
+
+.no-uploads {
+  text-align: center;
+  padding: 50px;
+  color: #aaa;
+  font-size: 18px;
+}
+
+.uploads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.upload-list-item {
+  background: linear-gradient(to right, rgba(30, 30, 60, 0.7), rgba(20, 20, 40, 0.7));
+  border-radius: 10px;
+  padding: 15px;
+  display: grid;
+  grid-template-columns: 1fr 2fr 100px;
+  gap: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  align-items: center;
+}
+
+.upload-list-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.upload-list-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.upload-list-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upload-list-thumbnail {
+  width: 100px;
+  height: 100px;
+  background-color: #1a1a2a;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .upload-list-item {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+  
+  .upload-list-thumbnail {
+    width: 100%;
+    height: 150px;
+    order: -1;
+  }
+}
+
+.uploads-loading, .uploads-error {
+  text-align: center;
+  padding: 50px;
+  color: #aaa;
+  font-size: 18px;
+}

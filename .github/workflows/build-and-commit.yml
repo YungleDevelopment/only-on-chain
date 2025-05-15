@@ -1,0 +1,56 @@
+name: Build and Upload to S3
+
+on:
+  push:
+    branches:
+      - main  # This workflow will ONLY run when changes are pushed to the main branch
+      - preprod  # This workflow will ONLY run when changes are pushed to the preprod   branch
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # Use the Node.js version that matches your development environment
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Set ENVIRONMENT variable
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" == "refs/heads/preprod" ]; then
+            echo "ENVIRONMENT=preproduction" >> $GITHUB_ENV
+          fi
+      
+      - name: Build project
+        run: |
+          npx webpack --mode production --env ENVIRONMENT=${{ env.ENVIRONMENT }} --progress --color
+          cp dist/bundle.js dist/bundle.txt
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2  # Change to your preferred AWS region
+      
+      - name: Upload to S3
+        run: |
+          aws s3 cp dist/bundle.js s3://only-on-chain-code-bucket/bundle-${{ env.ENVIRONMENT }}.js
+          aws s3 cp dist/bundle.txt s3://only-on-chain-code-bucket/bundle-${{ env.ENVIRONMENT }}.txt
+          echo "Files uploaded to S3 successfully"
+      
+      - name: Print permanent S3 URLs
+        run: |
+          echo "Permanent URLs for the uploaded files:"
+          echo "Bundle JS: https://only-on-chain-code-bucket.s3.amazonaws.com/bundle-${{ env.ENVIRONMENT }}.js"
+          echo "Bundle TXT: https://only-on-chain-code-bucket.s3.amazonaws.com/bundle-${{ env.ENVIRONMENT }}.txt"

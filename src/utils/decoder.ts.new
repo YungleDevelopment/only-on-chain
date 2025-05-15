@@ -1,0 +1,376 @@
+// src/utils/decoder.ts
+// No need for WASI imports anymore
+
+/**
+ * Type definition for the WASM instance with exported functions
+ */
+export interface WasmDecoderInstance {
+  exports: {
+    memory: WebAssembly.Memory;
+    hs_init: (a: number, b: number) => void;
+    hs_exit: () => void;
+    malloc_bytes_hs: (size: number) => number;
+    free_hs: (ptr: number) => void;
+    reconstructOriginalBytesC: (count: number, ptrArray: number) => number;
+  };
+}
+
+/**
+ * Initialize the WASM decoder by fetching and instantiating the WASM module
+ * @param wasmModuleUrl Optional URL to the WASM module, defaults to the S3 URL
+ * @returns Object containing the instantiated WASM module
+ */
+export async function initializeWasmDecoder(wasmModuleUrl?: string): Promise<{ wasmInstance: WasmDecoderInstance }> {
+  try {
+    const wasmUrl = wasmModuleUrl || 'https://metadata-decoder-wasm.s3.us-east-1.amazonaws.com/wasm-decoder.wasm';
+    console.log("Loading WASM from URL:", wasmUrl);
+    
+    // First try the streaming approach
+    try {
+      const response = await fetch(wasmUrl);
+      console.log("Response:", response);
+      // Check if the response is ok
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Try compileStreaming first (more efficient)
+      const compiledWasmDecoder = await WebAssembly.compileStreaming(response);
+      
+      // Create a dynamic WASI import object with a Proxy
+      // This will automatically handle any WASI function that the module requires
+      const wasiHandler = {
+        get: function(target: any, prop: string) {
+          // If the property already exists, return it
+          if (prop in target) {
+            return target[prop];
+          }
+          
+          // Otherwise, create a function that returns 0 (success in WASI)
+          console.log(`Auto-creating WASI function: ${prop}`);
+          return function(...args: any[]) {
+            console.log(`Called auto-created WASI function: ${prop} with ${args.length} args`);
+            return 0; // Return success for any function
+          };
+        }
+      };
+      
+      // Base WASI functions with explicit implementations
+      const baseWasi = {
+        proc_exit: (code: number) => {
+          console.log(`proc_exit called with code: ${code}`);
+        },
+        fd_write: (fd: number, iovs: number, iovsLen: number, nwritten: number) => {
+          console.log(`fd_write called: fd=${fd}, iovs=${iovs}, iovsLen=${iovsLen}, nwritten=${nwritten}`);
+          return 0;
+        }
+      };
+      
+      // Create the import object with a Proxy for wasi_snapshot_preview1
+      const importObject = {
+        wasi_snapshot_preview1: new Proxy(baseWasi, wasiHandler)
+      };
+      
+      const wasmInstance = await WebAssembly.instantiate(compiledWasmDecoder, importObject);
+      console.log("WASM initialized successfully via streaming");
+      return { wasmInstance: wasmInstance as unknown as WasmDecoderInstance };
+    } catch (streamingError) {
+      console.warn("Streaming compilation failed, falling back to ArrayBuffer approach:", streamingError);
+      
+      // Fallback to ArrayBuffer approach if streaming fails
+      const response = await fetch(wasmUrl);
+      console.log("Response:", response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const wasmBytes = await response.arrayBuffer();
+      const wasmModule = await WebAssembly.compile(wasmBytes);
+      
+      // Reuse the same dynamic WASI handler approach
+      const wasiHandler = {
+        get: function(target: any, prop: string) {
+          // If the property already exists, return it
+          if (prop in target) {
+            return target[prop];
+          }
+          
+          // Otherwise, create a function that returns 0 (success in WASI)
+          console.log(`Auto-creating WASI function: ${prop}`);
+          return function(...args: any[]) {
+            console.log(`Called auto-created WASI function: ${prop} with ${args.length} args`);
+            return 0; // Return success for any function
+          };
+        }
+      };
+      
+      // Base WASI functions with explicit implementations
+      const baseWasi = {
+        proc_exit: (code: number) => {
+          console.log(`proc_exit called with code: ${code}`);
+        },
+        fd_write: (fd: number, iovs: number, iovsLen: number, nwritten: number) => {
+          console.log(`fd_write called: fd=${fd}, iovs=${iovs}, iovsLen=${iovsLen}, nwritten=${nwritten}`);
+          return 0;
+        }
+      };
+      
+      // Create the import object with a Proxy for wasi_snapshot_preview1
+      const importObject = {
+        wasi_snapshot_preview1: new Proxy(baseWasi, wasiHandler)
+      };
+      
+      const wasmInstance = await WebAssembly.instantiate(wasmModule, importObject);
+      console.log("WASM initialized successfully via ArrayBuffer");
+      return { wasmInstance: wasmInstance as unknown as WasmDecoderInstance };
+    }
+  } catch (error) {
+    console.error("WASM initialization failed:", error);
+    throw error;
+  }
+}
+
+/**
+ * Validates if a string is a valid hexadecimal string
+ */
+export function isValidHexString(hex: string): boolean {
+  return /^[0-9A-Fa-f]*$/.test(hex);
+}
+
+/**
+ * Pure JavaScript implementation for reconstructing bytes from hex strings
+ * This is used as a fallback when WASM initialization fails
+ */
+function hexToBytes(hex: string): Uint8Array {
+  // Remove any non-hex characters (like spaces or line breaks)
+  hex = hex.replace(/[^0-9A-Fa-f]/g, '');
+  
+  // Ensure we have an even number of characters
+  if (hex.length % 2 !== 0) {
+    hex = '0' + hex;
+  }
+  
+  const bytes = new Uint8Array(hex.length / 2);
+  
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+  }
+  
+  return bytes;
+}
+
+/**
+ * Convert a byte array to a base64 string
+ */
+function bytesToBase64(bytes: Uint8Array): string {
+  const binString = Array.from(bytes)
+    .map(byte => String.fromCharCode(byte))
+    .join('');
+  
+  return btoa(binString);
+}
+
+/**
+ * Reconstructs the original bytes from an array of hex strings
+ * First tries to use the WASM implementation, falls back to pure JS if that fails
+ */
+export async function reconstructOriginalBytes(
+  wInstance: WasmDecoderInstance | null,
+  hexStringArray: string[]
+): Promise<string> {
+  console.log('Reconstructing bytes from hex strings:', hexStringArray);
+  
+  try {
+    // Validate hex strings
+    const validHexStrings = hexStringArray.filter(hex => isValidHexString(hex));
+    if (validHexStrings.length === 0) {
+      throw new Error('No valid hex strings provided');
+    }
+    
+    console.log('Valid hex strings:', validHexStrings);
+    
+    // Try WASM implementation first if available
+    if (wInstance && wInstance.exports && wInstance.exports.memory) {
+      try {
+        console.log('Attempting to use WASM implementation...');
+        
+        // Initialize the Haskell runtime
+        wInstance.exports.hs_init(0, 0);
+        
+        let hexStringPtrs: number[] = [];
+        let hexStringArrayPtrAddr = 0;
+        let base64Ptr = 0;
+        
+        try {
+          // Allocate and write each hex string to WASM memory
+          hexStringPtrs = validHexStrings.map(str => writeCString(str, wInstance));
+          
+          // Allocate memory for the array of pointers
+          hexStringArrayPtrAddr = wInstance.exports.malloc_bytes_hs(hexStringPtrs.length * 4); // 4 bytes per pointer
+          
+          // Write the array of pointers to WASM memory
+          const mem = new Uint8Array(wInstance.exports.memory.buffer);
+          const view = new DataView(wInstance.exports.memory.buffer);
+          
+          for (let i = 0; i < hexStringPtrs.length; i++) {
+            view.setUint32(hexStringArrayPtrAddr + i * 4, hexStringPtrs[i], true); // true for little-endian
+          }
+          
+          // Call the WASM function to reconstruct the bytes
+          console.log(`Calling reconstructOriginalBytesC with count=${hexStringPtrs.length}, ptrArray=${hexStringArrayPtrAddr}`);
+          base64Ptr = wInstance.exports.reconstructOriginalBytesC(hexStringPtrs.length, hexStringArrayPtrAddr);
+          
+          if (base64Ptr === 0) {
+            throw new Error('WASM function returned null pointer');
+          }
+          
+          // Read the result from WASM memory
+          const base64 = readCString(wInstance.exports.memory.buffer, base64Ptr);
+          console.log(`Successfully reconstructed bytes, base64 length: ${base64.length}`);
+          
+          // Free the allocated memory
+          wInstance.exports.free_hs(base64Ptr);
+          wInstance.exports.free_hs(hexStringArrayPtrAddr);
+          
+          // Free individual hex strings
+          hexStringPtrs.forEach(ptr => {
+            if (ptr !== 0) wInstance.exports.free_hs(ptr);
+          });
+          
+          // Shut down the Haskell runtime
+          wInstance.exports.hs_exit();
+          
+          return base64;
+        } catch (innerError: any) {
+          console.warn('Error during WASM execution:', innerError);
+          
+          // Clean up any allocated memory if possible
+          try {
+            if (base64Ptr !== 0) wInstance.exports.free_hs(base64Ptr);
+            if (hexStringArrayPtrAddr !== 0) wInstance.exports.free_hs(hexStringArrayPtrAddr);
+            
+            // Free individual hex strings
+            hexStringPtrs.forEach(ptr => {
+              if (ptr !== 0) wInstance.exports.free_hs(ptr);
+            });
+            
+            // Shut down the Haskell runtime
+            wInstance.exports.hs_exit();
+          } catch (cleanupError) {
+            console.warn('Error during cleanup:', cleanupError);
+          }
+          
+          throw innerError;
+        }
+      } catch (wasmError: any) {
+        console.warn('WASM implementation failed, falling back to JS:', wasmError);
+        // Fall back to JS implementation
+      }
+    }
+    
+    // JavaScript fallback implementation
+    console.log('Using JavaScript fallback implementation');
+    
+    // Concatenate all hex strings
+    const combinedHex = validHexStrings.join('');
+    console.log('Combined hex:', combinedHex);
+    
+    // Convert to bytes
+    const bytes = hexToBytes(combinedHex);
+    console.log('Converted to bytes, length:', bytes.length);
+    
+    // Convert to base64
+    const base64 = bytesToBase64(bytes);
+    console.log('Converted to base64, length:', base64.length);
+    
+    return base64;
+  } catch (error: any) {
+    console.error('Error in reconstructOriginalBytes:', error);
+    throw new Error(`Failed to reconstruct bytes: ${error.message || String(error)}`);
+  }
+}
+
+/**
+ * Helper: Read a null-terminated C string from WASM memory
+ */
+function readCString(memory: ArrayBuffer, ptr: number): string {
+  if (!memory) {
+    throw new Error('Memory buffer is undefined in readCString');
+  }
+  
+  try {
+    console.log(`Reading C string from memory at pointer: ${ptr}`);
+    console.log(`Memory buffer size: ${memory.byteLength}`);
+    
+    const mem = new Uint8Array(memory);
+    let end = ptr;
+    const memLength = mem.length;
+    
+    // Check for out-of-bounds access
+    if (ptr >= memLength) {
+      throw new Error(`readCString: Pointer ${ptr} is outside WASM memory bounds.`);
+    }
+
+    // Find null terminator, but stop at memory boundary
+    while (end < memLength && mem[end] !== 0) {
+      end++;
+    }    
+    if (end >= mem.length) {
+      throw new Error("readCString: Unterminated string (no null byte found).");
+    }
+
+    // Decode the string
+    const result = new TextDecoder().decode(mem.subarray(ptr, end));
+    console.log(`Successfully read string of length ${end - ptr}`);
+    return result;
+  } catch (error: any) {
+    console.error('Error in readCString:', error);
+    throw new Error(`Error in readCString: ${error.message || String(error)}`);
+  }
+}
+
+/**
+ * Helper: Write a JS string to WASM memory (returns pointer)
+ */
+function writeCString(str: string, wInstance: WasmDecoderInstance): number {
+  if (!wInstance || !wInstance.exports || !wInstance.exports.memory || !wInstance.exports.memory.buffer) {
+    console.error('WASM instance structure:', wInstance);
+    throw new Error('Invalid WASM instance structure in writeCString');
+  }
+  
+  try {
+    const lengthNeeded = str.length + 1;
+    const ptr = wInstance.exports.malloc_bytes_hs(str.length + 1);  // +1 for null terminator
+    console.log(`Allocated memory at pointer: ${ptr} for string length: ${str.length}`);
+    
+    const mem = new Uint8Array(wInstance.exports.memory.buffer);
+    console.log(`Memory buffer size: ${mem.length}`);
+
+    // Check if pointer is valid and space is sufficient
+    if (ptr + lengthNeeded >= mem.length) {
+      wInstance.exports.free_hs(ptr);  // Avoid leaking memory
+      throw new Error(`writeCString: String '${str}' exceeds allocated WASM memory.`);
+    }
+
+    for (let i = 0; i < str.length; i++) {
+      mem[ptr + i] = str.charCodeAt(i);
+    }
+    mem[ptr + str.length] = 0;  // Null-terminate
+    return ptr;
+  } catch (error: any) {
+    console.error('Error in writeCString:', error);
+    throw new Error(`Error in writeCString: ${error.message || String(error)}`);
+  }
+}
+
+/**
+ * Helper: Convert base64 string to byte array
+ */
+export function base64ToBytes(base64: string): Uint8Array {
+  const binStr = atob(base64);
+  const bytes = new Uint8Array(binStr.length);
+  for (let i = 0; i < binStr.length; i++) {
+    bytes[i] = binStr.charCodeAt(i);
+  }
+  return bytes;
+}
