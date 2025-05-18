@@ -8,7 +8,7 @@ interface UploadsListProps {
 }
 
 const UploadsList: React.FC<UploadsListProps> = ({ uploads, onCopyText }) => (
-  <div className="uploads-list">
+  <div className="flex flex-col gap-4 mb-8">
     {uploads.map((upload, idx) => (
       <UploadListItem key={upload.id || idx} upload={upload} onCopyText={onCopyText} />
     ))}

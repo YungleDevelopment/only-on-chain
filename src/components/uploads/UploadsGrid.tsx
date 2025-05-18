@@ -9,7 +9,7 @@ interface UploadsGridProps {
 }
 
 const UploadsGrid: React.FC<UploadsGridProps> = ({ uploads, onCopyText }) => (
-  <div className="uploads-grid">
+  <div className="grid grid-cols-3 gap-5 mb-8 md:grid-cols-2 sm:grid-cols-1">
     {uploads.map((upload) => (
       <UploadCard key={upload.id} upload={upload} onCopyText={onCopyText} />
     ))}

@@ -32,56 +32,60 @@ const UploadsFilters: React.FC<UploadsFiltersProps> = ({
   viewMode,
   setViewMode,
 }) => (
-  <div className="uploads-controls">
-    <div className="search-bar">
-      <form onSubmit={onSearch}>
+  <div className="flex flex-col gap-4 w-full max-w-[800px]">
+    <div className="w-full mb-2.5">
+      <form onSubmit={onSearch} className="flex w-full">
         <input
           type="text"
           placeholder="Search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="search-input"
+          className="flex-grow py-2.5 px-4 rounded-l-md bg-[var(--color-bg-card)] text-[var(--color-primary-tw)] border border-[var(--color-border)] border-r-0"
         />
-        <button type="submit" className="search-button">
+        <button type="submit" className="py-2.5 px-4 rounded-r-md bg-[var(--color-bg-hover)] text-[var(--color-primary-tw)] border border-[var(--color-border)] cursor-pointer transition-colors duration-200 hover:bg-[var(--color-bg-active)]">
           <span role="img" aria-label="search">🔍</span>
         </button>
       </form>
     </div>
-    <div className="uploads-filters">
-      <div className="filter-group">
-        <label>Filter by Date</label>
+    <div className="flex gap-4 items-center flex-wrap justify-between">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm text-[var(--color-text-secondary)]">Filter by Date</label>
         <select
           value={dateFilter}
           onChange={(e) => setDateFilter(e.target.value)}
-          className="filter-select"
+          className="py-2 px-3 rounded-md bg-[#1a1a2a] text-white border border-[#333] min-w-[120px]"
         >
           {dateFilterOptions.map((option) => (
             <option key={option.id} value={option.id}>{option.label}</option>
           ))}
         </select>
       </div>
-      <div className="filter-group">
-        <label>Filter by Type</label>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm text-[var(--color-text-secondary)]">Filter by Type</label>
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          className="filter-select"
+          className="py-2 px-3 rounded-md bg-[#1a1a2a] text-white border border-[#333] min-w-[120px]"
         >
           {typeFilterOptions.map((option) => (
             <option key={option.id} value={option.id}>{option.label}</option>
           ))}
         </select>
       </div>
-      <div className="view-toggle">
+      <div className="flex gap-1.5">
         <button
-          className={`view-button ${viewMode === "grid" ? "active" : ""}`}
+          className={`w-10 h-10 flex items-center justify-center bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-primary-tw)] rounded-md cursor-pointer transition-colors duration-200 hover:bg-[var(--color-bg-hover)] ${
+            viewMode === "grid" ? "bg-[var(--color-bg-active)] border-[var(--color-border-active)]" : ""
+          }`}
           onClick={() => setViewMode("grid")}
           aria-label="Grid view"
         >
           <span role="img" aria-hidden="true">⊞</span>
         </button>
         <button
-          className={`view-button ${viewMode === "list" ? "active" : ""}`}
+          className={`w-10 h-10 flex items-center justify-center bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-primary-tw)] rounded-md cursor-pointer transition-colors duration-200 hover:bg-[var(--color-bg-hover)] ${
+            viewMode === "list" ? "bg-[var(--color-bg-active)] border-[var(--color-border-active)]" : ""
+          }`}
           onClick={() => setViewMode("list")}
           aria-label="List view"
         >
