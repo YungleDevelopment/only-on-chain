@@ -13,6 +13,7 @@ import UploadsFilters from "./UploadsFilters";
 import { useWallet } from "../../context/WalletContext";
 import { ExplorerLink } from "../ui/FinishScreen";
 import { mockUploads } from "./mockData";
+import GradientText from "./GradientText";
 
 interface UploadsProps {
   limit?: number;
@@ -178,11 +179,11 @@ const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
   // }
 
   return (
-    <div className="max-w-7xl mx-auto p-5 text-[var(--color-primary-tw)] bg-[var(--color-bg-dark)] min-h-screen">
-      <div className="flex justify-between items-center mb-8 flex-wrap">
-        <h1 className="text-3xl font-bold text-[var(--color-primary-tw)] m-0">
-          My uploads
-        </h1>
+    <div className="max-w-7xl mx-auto p-5 text-black bg-[var(--color-bg-dark)] min-h-screen">
+      <h1 className="text-7xl font-bold text-center my-8">
+        <GradientText text="My uploads" />
+      </h1>
+      <div className="mb-8">
         <UploadsFilters
           dateFilter={dateFilter}
           setDateFilter={setDateFilter}
@@ -236,7 +237,9 @@ const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
                 1
               </button>
             )}
-            {currentPage > 3 && <span className="text-[var(--color-text-secondary)]">...</span>}
+            {currentPage > 3 && (
+              <span className="text-[var(--color-text-secondary)]">...</span>
+            )}
             {currentPage > 1 && (
               <button
                 onClick={() => goToPage(currentPage - 1)}
@@ -256,7 +259,9 @@ const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
                 {currentPage + 1}
               </button>
             )}
-            {hasMorePages && <span className="text-[var(--color-text-secondary)]">...</span>}
+            {hasMorePages && (
+              <span className="text-[var(--color-text-secondary)]">...</span>
+            )}
           </div>
 
           <button
