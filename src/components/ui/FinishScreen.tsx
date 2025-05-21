@@ -27,10 +27,10 @@ export const ExplorerLink = ({ txId }: { txId: string }) => (
     href={`https://preprod.cardanoscan.io/transaction/${txId}`}
     target="_blank"
     rel="noopener noreferrer"
-    className="!text-white/80  hover:opacity-80 transition-colors flex items-center gap-2 w-full"
+    className="!text-white  hover:opacity-80 transition-colors flex items-center gap-2 w-full truncate"
   >
     <svg
-      className="w-4 h-4"
+      className="w-4 h-4 flex-shrink-0"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -49,7 +49,7 @@ export const ExplorerLink = ({ txId }: { txId: string }) => (
         strokeLinejoin="round"
       />
     </svg>
-    {txId}
+    <span className="truncate">{txId}</span>
   </a>
 );
 
@@ -101,7 +101,9 @@ export function FinishScreen({
         <div className="flex flex-col gap-4 items-center text-sm w-full mt-4">
           {/* Preparation Transaction Section */}
           <div className="flex flex-col gap-2 w-full">
-            <div className="!text-white/80 font-semibold">Preparation Phase</div>
+            <div className="!text-white/80 font-semibold">
+              Preparation Phase
+            </div>
             <div className="border-t border-white/20 my-1"></div>
 
             {preparationTxId && (
@@ -116,7 +118,9 @@ export function FinishScreen({
 
           {/* Inscription Transaction Section */}
           <div className="flex flex-col gap-2 w-full mt-4">
-            <div className="!text-white/80 font-semibold">Inscription Phase</div>
+            <div className="!text-white/80 font-semibold">
+              Inscription Phase
+            </div>
             <div className="border-t border-white/20 my-1"></div>
 
             {indexingTxId && (

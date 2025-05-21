@@ -37,8 +37,12 @@ const typeFilterOptions = [
   { id: "jpeg", label: "JPEG/JPG" },
 ];
 
+// Importar el tipo DateRange de react-day-picker para mantener compatibilidad
+import { DateRange } from "react-day-picker";
+
 const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
   const [dateFilter, setDateFilter] = useState<string>("select");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -67,39 +71,48 @@ const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
 
   // Filtering logic
   // Use mockData cuando no hay datos reales
-  useEffect(() => {
-    if (allUploads.length === 0 && !loading) {
-      setAllUploads(mockUploads);
-    }
-  }, [allUploads.length, loading, setAllUploads]);
+  // useEffect(() => {
+  //   if (allUploads.length === 0 && !loading) {
+  //     setAllUploads(mockUploads);
+  //   }
+  // }, [allUploads.length, loading, setAllUploads]);
 
   useEffect(() => {
     let filtered = [...allUploads];
-    // Date filter
-    if (dateFilter !== "select") {
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const thisWeek = new Date(today);
-      thisWeek.setDate(today.getDate() - 7);
-      const thisMonth = new Date(today);
-      thisMonth.setMonth(today.getMonth() - 1);
-      const thisYear = new Date(today);
-      thisYear.setFullYear(today.getFullYear() - 1);
-      filtered = filtered.filter((upload) => {
-        const uploadDate = new Date(upload.dateUploaded);
-        switch (dateFilter) {
-          case "today":
-            return uploadDate >= today;
-          case "week":
-            return uploadDate >= thisWeek;
-          case "month":
-            return uploadDate >= thisMonth;
-          case "year":
-            return uploadDate >= thisYear;
-          default:
-            return true;
-        }
+    // Filtro por rango de fechas
+    if (dateRange && dateRange.from && dateRange.to) {
+      console.log("Aplicando filtro por rango de fechas:", {
+        desde: dateRange.from.toISOString(),
+        hasta: dateRange.to.toISOString(),
       });
+
+      // Si tenemos un rango seleccionado, filtramos por ese rango
+      filtered = filtered.filter((upload) => {
+        // Verificar que el upload tiene fecha
+        if (!upload.dateUploaded) return false;
+
+        const uploadDate = new Date(upload.dateUploaded);
+        console.log(
+          `Evaluando upload: ${upload.name}, fecha: ${uploadDate.toISOString()}`
+        );
+
+        // Usar aserciones de tipo para evitar errores de TypeScript
+        const fromDate = dateRange.from as Date;
+        const toDate = dateRange.to as Date;
+
+        // Ajustar el final del día para to (hasta las 23:59:59)
+        const endDate = new Date(toDate.getTime());
+        endDate.setHours(23, 59, 59, 999);
+
+        // Verificar si la fecha está dentro del rango seleccionado
+        const isInRange = uploadDate >= fromDate && uploadDate <= endDate;
+        console.log(`  ${upload.name} está en rango: ${isInRange}`);
+        return isInRange;
+      });
+
+      console.log(
+        `Resultados filtrados: ${filtered.length} de ${allUploads.length}`
+      );
     }
     // Type filter
     if (typeFilter !== "all") {
@@ -133,17 +146,30 @@ const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
       );
     }
     setFilteredUploads(filtered);
-    setDisplayedUploads(filtered.slice(0, limit));
+    // Reset pagination when filters change
     setCurrentPage(1);
+    setPagesData({});
+    setDisplayedUploads(filtered.slice(0, limit));
+    setLastObjectUlids({});
+    setHasMorePages(filtered.length > limit);
+
+    // Depurar cantidad de elementos filtrados
+    console.log(
+      `Total de elementos después de todos los filtros: ${filtered.length}`
+    );
   }, [
     allUploads,
     dateFilter,
     typeFilter,
     searchQuery,
+    dateRange,
     limit,
     setFilteredUploads,
-    setDisplayedUploads,
     setCurrentPage,
+    setPagesData,
+    setDisplayedUploads,
+    setLastObjectUlids,
+    setHasMorePages,
   ]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -158,25 +184,91 @@ const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
   const loadMore = () => {
     if (hasMorePages) fetchNextPage(currentPage + 1);
   };
-  const goToPreviousPage = () => {
-    if (currentPage > 1) {
-      setDisplayedUploads(pagesData[currentPage - 1] || []);
-      setCurrentPage(currentPage - 1);
-    }
+
+  // Get paginated data for current page
+  const getPageData = (page: number, pageLimit: number) => {
+    const startIndex = (page - 1) * pageLimit;
+    return filteredUploads.slice(startIndex, startIndex + pageLimit);
   };
-  const goToPage = (page: number) => {
-    if (page === currentPage) return;
-    if (page < currentPage) {
-      setDisplayedUploads(pagesData[page] || []);
-      setCurrentPage(page);
-    } else {
-      fetchNextPage(page);
+
+  // Get next page of uploads
+  const goToNextPage = () => {
+    if (hasMorePages) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
     }
   };
 
-  // if (!defaultWallet) {
-  //   return <div className="uploads-error">Please connect a wallet</div>;
-  // }
+  // Generate array of page numbers to display in pagination
+  const getPageNumbers = () => {
+    const totalPages = Math.ceil(filteredUploads.length / limit);
+    const pageNumbers: (number | string)[] = [];
+
+    if (totalPages <= 5) {
+      // If we have 5 or fewer pages, show all page numbers
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Always show first page
+      pageNumbers.push(1);
+
+      if (currentPage <= 3) {
+        // Near the beginning; show first 4 pages, then ellipsis, then last page
+        pageNumbers.push(2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // Near the end; show first page, ellipsis, then last 4 pages
+        pageNumbers.push(
+          "...",
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages
+        );
+      } else {
+        // In the middle; show first page, ellipsis, current page and neighbors, ellipsis, last page
+        pageNumbers.push(
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages
+        );
+      }
+    }
+
+    return pageNumbers;
+  };
+
+  // Pagination logic - update displayed uploads when page changes
+  useEffect(() => {
+    if (filteredUploads.length > 0) {
+      // Get uploads for the current page
+      setDisplayedUploads(getPageData(currentPage, limit));
+      // Calculate if there are more pages available
+      const totalPages = Math.ceil(filteredUploads.length / limit);
+      setHasMorePages(currentPage < totalPages);
+    } else {
+      setDisplayedUploads([]);
+      setHasMorePages(false);
+    }
+  }, [filteredUploads, currentPage, limit]);
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page === currentPage) return;
+    setCurrentPage(page);
+  };
+
+  if (!defaultWallet) {
+    return <div className="uploads-error">Please connect a wallet</div>;
+  }
 
   return (
     <div className="max-w-7xl mx-auto p-5 text-black bg-[var(--color-bg-dark)] min-h-screen">
@@ -196,6 +288,8 @@ const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
           typeFilterOptions={typeFilterOptions}
           viewMode={viewMode}
           setViewMode={setViewMode}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
         />
       </div>
 
@@ -219,55 +313,41 @@ const Uploads: React.FC<UploadsProps> = ({ limit = 9 }) => {
 
       {/* Only show pagination if we have uploads to display */}
       {displayedUploads.length > 0 && (
-        <div className="flex justify-center items-center mt-8 gap-2.5">
+        <div className="flex justify-center items-center mt-8 gap-4">
           <button
             onClick={goToPreviousPage}
             disabled={currentPage === 1 || loading}
-            className="bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-primary-tw)] px-4 py-2 rounded-md cursor-pointer transition-colors duration-200 hover:bg-[var(--color-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[rgba(255,255,255,0.1)] border border-white cursor-pointer text-white font-semibold py-2 px-4 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.3)]"
           >
             Previous
           </button>
 
-          <div className="flex items-center gap-1.5">
-            {currentPage > 2 && (
-              <button
-                onClick={() => goToPage(1)}
-                className="w-8 h-8 flex items-center justify-center bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-primary-tw)] rounded-md cursor-pointer"
-              >
-                1
-              </button>
-            )}
-            {currentPage > 3 && (
-              <span className="text-[var(--color-text-secondary)]">...</span>
-            )}
-            {currentPage > 1 && (
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                className="w-8 h-8 flex items-center justify-center bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-primary-tw)] rounded-md cursor-pointer"
-              >
-                {currentPage - 1}
-              </button>
-            )}
-            <button className="w-8 h-8 flex items-center justify-center bg-[var(--color-bg-active)] border border-[var(--color-border-active)] text-[var(--color-primary-tw)] rounded-md cursor-pointer">
-              {currentPage}
-            </button>
-            {hasMorePages && (
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                className="w-8 h-8 flex items-center justify-center bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-primary-tw)] rounded-md cursor-pointer"
-              >
-                {currentPage + 1}
-              </button>
-            )}
-            {hasMorePages && (
-              <span className="text-[var(--color-text-secondary)]">...</span>
+          <div className="flex items-center gap-2">
+            {getPageNumbers().map((page, index) =>
+              typeof page === "number" ? (
+                <button
+                  key={index}
+                  onClick={() => goToPage(page)}
+                  className={`w-14 h-10 flex items-center justify-center rounded-full border-2 ${
+                    page === currentPage
+                      ? "bg-white text-black border-white"
+                      : "text-white border-white hover:border-white hover:bg-[rgba(255,255,255,0.3)]"
+                  } font-medium cursor-pointer transition-all duration-200`}
+                >
+                  {page}
+                </button>
+              ) : (
+                <span key={index} className="text-gray-400 mx-1">
+                  {page}
+                </span>
+              )
             )}
           </div>
 
           <button
-            onClick={loadMore}
+            onClick={goToNextPage}
             disabled={!hasMorePages || loading}
-            className="bg-[var(--color-bg-card)] border border-[var(--color-border)] text-[var(--color-primary-tw)] px-4 py-2 rounded-md cursor-pointer transition-colors duration-200 hover:bg-[var(--color-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-[rgba(255,255,255,0.1)] border border-white cursor-pointer text-white font-semibold py-2 px-4 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[rgba(255,255,255,0.3)]"
           >
             Next
           </button>

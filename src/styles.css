@@ -3,10 +3,11 @@
 @theme {
   --color-primary-tw: #2b80ff;
   --color-light: #c3d5f7;
+  --color-bg-active: #fff;
+  --color-card: rgba(6, 12, 30, 0.3);
   --color-bg-dark: #0a0a1a;
   --color-bg-card: #1a1a2a;
   --color-bg-hover: #2a2a3a;
-  --color-bg-active: #fff;
   --color-border: #333;
   --color-border-active: #5a5a7a;
   --color-text-secondary: #aaa;
